@@ -22,7 +22,10 @@
 
 package com.codecatalyst.promise
 {
-	import mx.rpc.AsyncToken;
+    CONFIG::flex
+    {
+    	import mx.rpc.AsyncToken;
+    }
 
 	/**
 	 * Promises represent a future value; i.e., a value that may not yet be available.
@@ -41,13 +44,20 @@ package com.codecatalyst.promise
 		public static function when( value:* ):Promise
 		{
 			var deferred:Deferred = new Deferred();
+            var isAsyncToken:Boolean = false;
+            
+            CONFIG::flex
+            {
+                isAsyncToken = value is AsyncToken;
+                
+                if ( isAsyncToken )
+                {
+                    var token:AsyncToken = value as AsyncToken;
+                    token.addResponder( new DeferredResponder( deferred ) );
+                }
+            }
 			
-			if ( value is AsyncToken )
-			{
-				var token:AsyncToken = value as AsyncToken;
-				token.addResponder( new DeferredResponder( deferred ) );
-			}
-			else
+            if ( !isAsyncToken )
 			{
 				deferred.resolve( value );
 			}
@@ -94,59 +104,63 @@ package com.codecatalyst.promise
 		}
 	}
 }
-import com.codecatalyst.promise.Deferred;
 
-import mx.rpc.IResponder;
-import mx.rpc.events.FaultEvent;
-import mx.rpc.events.ResultEvent;
-
-/**
- * Adapts IResponder interface to delegate result and fault as resolution and rejection of a Deferred.
- * 
- * @private
- */
-class DeferredResponder implements IResponder
+CONFIG::flex
 {
-	// ========================================
-	// Protected properties
-	// ========================================
-	
-	protected var deferred:Deferred;
-	
-	// ========================================
-	// Constructor
-	// ========================================
-	
-	function DeferredResponder( deferred:Deferred )
-	{
-		super();
-		
-		this.deferred = deferred;
-	}
-	
-	// ========================================
-	// Public methods
-	// ========================================
-	
-	/**
-	 * @inheritDoc
-	 */
-	public function result( data:Object ):void
-	{
-		if ( data is ResultEvent )
-			deferred.resolve( data.result );
-		else
-			deferred.resolve( data );
-	}
-	
-	/**
-	 * @inheritDoc
-	 */
-	public function fault( info:Object ):void
-	{
-		if ( info is FaultEvent )
-			deferred.reject( info.fault );
-		else
-			deferred.reject( info );
-	}
+    import com.codecatalyst.promise.Deferred;
+    
+    import mx.rpc.IResponder;
+    import mx.rpc.events.FaultEvent;
+    import mx.rpc.events.ResultEvent;
+    
+    /**
+     * Adapts IResponder interface to delegate result and fault as resolution and rejection of a Deferred.
+     * 
+     * @private
+     */
+    class DeferredResponder implements IResponder
+    {
+    	// ========================================
+    	// Protected properties
+    	// ========================================
+    	
+    	protected var deferred:Deferred;
+    	
+    	// ========================================
+    	// Constructor
+    	// ========================================
+    	
+    	function DeferredResponder( deferred:Deferred )
+    	{
+    		super();
+    		
+    		this.deferred = deferred;
+    	}
+    	
+    	// ========================================
+    	// Public methods
+    	// ========================================
+    	
+    	/**
+    	 * @inheritDoc
+    	 */
+    	public function result( data:Object ):void
+    	{
+    		if ( data is ResultEvent )
+    			deferred.resolve( data.result );
+    		else
+    			deferred.resolve( data );
+    	}
+    	
+    	/**
+    	 * @inheritDoc
+    	 */
+    	public function fault( info:Object ):void
+    	{
+    		if ( info is FaultEvent )
+    			deferred.reject( info.fault );
+    		else
+    			deferred.reject( info );
+    	}
+    }
 }
